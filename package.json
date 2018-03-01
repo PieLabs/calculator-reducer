@@ -1,0 +1,37 @@
+{
+  "name": "@pie-labs/calculator-reducer",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "0.0.1",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "dependencies": {
+    "mathjs": "^4.0.0",
+    "debug": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/mathjs": "^0.0.37",
+    "@types/jest": "^19.2.4",
+    "jest": "^22.4.2",
+    "tslint": "^5.9.1",
+    "typescript": "^2.7.2"
+  },
+  "scripts": {
+    "build": "rm -fr lib && ./node_modules/.bin/tsc --p tsconfig.build.json",
+    "test": "./node_modules/.bin/jest"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "<rootDir>/preprocessor.js"
+    },
+    "testMatch": [
+      "**/src/__tests__/*.(ts|tsx|js)"
+    ]
+  }
+}
