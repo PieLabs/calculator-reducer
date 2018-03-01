@@ -1,6 +1,11 @@
 import * as mathjs from 'mathjs';
 import debug from 'debug';
 
+export type State = {
+  value: string;
+  error?: Error;
+};
+
 const log = debug('calculator-reducer');
 
 const removeLastChar = (s: string) => {
@@ -42,42 +47,43 @@ const unary = (state, unary) => {
   }
 };
 
-const reduce = (state, action): any => {
+export enum Inputs {
+  PLUS_MINUS = 'plus-minus',
+  CLEAR = 'clear',
+  DECIMAL = '.',
+  DELETE = 'delete',
+  EQUALS = 'equals',
+  SQUARE_ROOT = 'sqrt',
+  SQUARE = 'square',
+}
 
-  switch (action.type) {
-    case 'clear': {
-      return { value: '' };
-    }
-    case 'plus-minus': {
+const reduce = (state: State, value: string): State => {
+
+  if (!value || value.length === 0) {
+    return state;
+  }
+
+  switch (value) {
+    case Inputs.CLEAR: return { value: '' };
+    case Inputs.PLUS_MINUS: {
       const value = state.value.indexOf('-') === 0 ? `${state.value.substring(1)}` : `-${state.value}`;
       return { value };
     }
-    case 'input': {
-      switch (action.value) {
-        case '.': {
-          const value = addDecimal(state.value);
-          return { ...state, value };
-        }
-        default: {
-          return { ...state, value: `${state.value}${action.value}` };
-        }
-      }
+    case Inputs.DECIMAL: {
+      const value = addDecimal(state.value);
+      return { ...state, value };
     }
-    case 'delete': {
+    case Inputs.DELETE: {
       const { value } = state;
-      return { ...state, value: removeLastChar(value) };
+      return { value: removeLastChar(value) };
     }
-    case 'unary': {
-      return unary(state, action.unary);
-    }
-    case 'equals': {
-      return equals(state);
-    }
-    default: {
-      return state;
-    }
-  }
+    case Inputs.SQUARE_ROOT:
+    case Inputs.SQUARE: return unary(state, value);
+    case Inputs.EQUALS: return equals(state);
+    default: return { value: `${state.value}${value}` };
+  };
 };
+
 
 export default reduce;
 
