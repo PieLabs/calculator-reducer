@@ -12,7 +12,45 @@ export type State = {
   error?: Error;
 };
 
+export enum Inputs {
+  PLUS_MINUS = 'plus-minus',
+  CLEAR = 'clear',
+  DECIMAL = '.',
+  DELETE = 'delete',
+  EQUALS = 'equals',
+  PI = 'π',
+  FRACTION = '1/x',
+  PERCENT = '%',
+  EXPONENT = 'e',
+  FACTORIAL = '!'
+}
+
+export enum UnaryInput {
+  SQUARE_ROOT = 'sqrt',
+  SQUARE = 'square',
+  CUBE = 'cube',
+  ABS = 'abs'
+}
+
+export enum LogInput {
+  LOG = 'log',
+  NATURAL_LOG = 'ln'
+}
+
+export enum AngleInput {
+  SIN = 'sin',
+  COS = 'cos',
+  TAN = 'tan',
+  ASIN = 'asin',
+  ACOS = 'acos',
+  ATAN = 'atan'
+}
+
 const log = debug('@pie-labs:calculator-reducer');
+
+export const radians = degrees => degrees * Math.PI / 180;
+
+export const ALLOWED_INPUT: RegExp = /^[0-9\+\-\/\*\(\)\^]*$/;
 
 const removeLastChar = (s: string) => {
   if (s.length === 0) {
@@ -27,7 +65,7 @@ const addDecimal = (s: string): string => {
   return t.indexOf('.') === -1 ? `${t}.` : t;
 };
 
-const apply = (state: State, fn: (n: number) => number): State => {
+const apply = (state: State, fn: (n: number) => number | string): State => {
   const o = evaluate(state.expr);
   if (o instanceof Error) {
     return { ...state, error: o };
@@ -37,7 +75,16 @@ const apply = (state: State, fn: (n: number) => number): State => {
   }
 };
 
+// mathjs.ln
 const fraction = (numerator: number, state: State): State => apply(state, n => numerator / n);
+
+const factorial = (state: State) => {
+  if (state.expr.endsWith('!')) {
+    return { ...state, expr: state.expr.substr(0, state.expr.length - 1) };
+  } else {
+    return apply(state, n => `${n}!`);
+  }
+};
 
 
 const percent = (state: State): State => apply(state, (o: number) => o * 0.01);
@@ -60,6 +107,13 @@ const equals = (s: State): State => {
   }
 };
 
+const calculateLog = (state: State, li: LogInput): State => {
+  log('[calculateLog] li: ', li);
+  return apply(state, n => {
+    return (li === LogInput.LOG ? mathjs.log(n, 10) : mathjs.log(n)).toString();
+  });
+};
+
 const unary = (state: State, unary: UnaryInput): State => {
 
   state = equals(state);
@@ -75,39 +129,6 @@ const unary = (state: State, unary: UnaryInput): State => {
     }
   }
 };
-
-export enum Inputs {
-  PLUS_MINUS = 'plus-minus',
-  CLEAR = 'clear',
-  DECIMAL = '.',
-  DELETE = 'delete',
-  EQUALS = 'equals',
-  PI = 'π',
-  FRACTION = '1/x',
-  PERCENT = '%'
-}
-
-export enum UnaryInput {
-  SQUARE_ROOT = 'sqrt',
-  SQUARE = 'square',
-  CUBE = 'cube',
-  LOG = 'log',
-}
-
-export enum AngleInput {
-  SIN = 'sin',
-  COS = 'cos',
-  TAN = 'tan',
-  ASIN = 'asin',
-  ACOS = 'acos',
-  ATAN = 'atan'
-}
-
-export const radians = degrees => degrees * Math.PI / 180;
-
-const degrees = radians => radians * 180 / Math.PI;
-
-export const ALLOWED_INPUT: RegExp = /^[0-9\+\-\/\*\(\)\^]*$/;
 
 const angle = (state: State, ai: AngleInput): State => {
   const o = evaluate(state.expr);
@@ -146,36 +167,45 @@ const reduce = (state: State, value: string): State => {
   } else {
 
     const ui: UnaryInput | undefined = fromStringTyped(UnaryInput, value);
+
     if (ui) {
       return unary(state, ui);
     } else {
 
-      switch (value) {
-        case Inputs.CLEAR: return { ...state, expr: '' };
-        case Inputs.PLUS_MINUS: {
-          const expr = state.expr.indexOf('-') === 0 ? `${state.expr.substring(1)}` : `-${state.expr}`;
-          return { ...state, expr };
-        }
-        case Inputs.DECIMAL: {
-          const expr = addDecimal(state.expr);
-          return { ...state, expr };
-        }
-        case Inputs.FRACTION: return fraction(1, state);
-        case Inputs.PERCENT: return percent(state);
-        case Inputs.DELETE: {
-          const expr = removeLastChar(state.expr);
-          return { ...state, expr };
-        }
-        case Inputs.PI: return { ...state, expr: mathjs.pi.toString() };
-        case Inputs.EQUALS: return equals(state);
-        default: {
-          if (ALLOWED_INPUT.test(value)) {
-            return { ...state, expr: `${state.expr}${value}` };
-          } else {
-            return {
-              ...state,
-              error: Error(`unknown input: ${value}`)
-            };
+      const li: LogInput | undefined = fromStringTyped(LogInput, value);
+      if (li) {
+        return calculateLog(state, li);
+      } else {
+
+        switch (value) {
+          case Inputs.CLEAR: return { ...state, expr: '' };
+          case Inputs.PLUS_MINUS: {
+            const expr = state.expr.indexOf('-') === 0 ? `${state.expr.substring(1)}` : `-${state.expr}`;
+            return { ...state, expr };
+          }
+          case Inputs.DECIMAL: {
+            const expr = addDecimal(state.expr);
+            return { ...state, expr };
+          }
+          case Inputs.FRACTION: return fraction(1, state);
+          case Inputs.PERCENT: return percent(state);
+          case Inputs.DELETE: {
+            const expr = removeLastChar(state.expr);
+            return { ...state, expr };
+          }
+          case Inputs.FACTORIAL: return factorial(state);
+          case Inputs.PI: return { ...state, expr: mathjs.pi.toString() };
+          case Inputs.EXPONENT: return { ...state, expr: mathjs.e.toString() };
+          case Inputs.EQUALS: return equals(state);
+          default: {
+            if (ALLOWED_INPUT.test(value)) {
+              return { ...state, expr: `${state.expr}${value}` };
+            } else {
+              return {
+                ...state,
+                error: Error(`unknown input: ${value}`)
+              };
+            }
           }
         }
       }

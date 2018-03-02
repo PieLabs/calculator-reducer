@@ -16,12 +16,18 @@ export declare enum Inputs {
     PI = "\u03C0",
     FRACTION = "1/x",
     PERCENT = "%",
+    EXPONENT = "e",
+    FACTORIAL = "!",
 }
 export declare enum UnaryInput {
     SQUARE_ROOT = "sqrt",
     SQUARE = "square",
     CUBE = "cube",
+    ABS = "abs",
+}
+export declare enum LogInput {
     LOG = "log",
+    NATURAL_LOG = "ln",
 }
 export declare enum AngleInput {
     SIN = "sin",

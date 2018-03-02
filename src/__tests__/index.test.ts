@@ -67,6 +67,15 @@ describe('reduce', () => {
   });
 
 
+  describe('factorial', () => {
+    assert('4 + 3', '!', '7!');
+    assert('7!', '!', '7');
+  });
+
+  describe('log', () => {
+    assert('2', 'ln', mathjs.log(2).toString());
+    assert('2', 'log', mathjs.log(2, 10).toString());
+  });
 
   describe('digit', () => {
     assert('1+', '1', { expr: '1+1' });
@@ -96,10 +105,7 @@ describe('reduce', () => {
     assert('2', SQUARE, { expr: '4' });
     assert('4', SQUARE_ROOT, '2');
     assert('4', SQUARE, '16');
-    assert('4', LOG, mathjs.log('4').toString());
     assert('(4 + 4) - 2 - 2', SQUARE_ROOT, '2');
-
-
   });
 
   describe('%', () => {
