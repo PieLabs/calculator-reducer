@@ -1,0 +1,13 @@
+{
+  "moduleFileExtensions": [
+    "ts",
+    "tsx",
+    "js"
+  ],
+  "transform": {
+    "^.+\\.(ts|tsx)$": "<rootDir>/preprocessor.js"
+  },
+  "testMatch": [
+    "**/src/__tests__/*.(ts|tsx|js)"
+  ]
+}
