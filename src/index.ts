@@ -55,11 +55,13 @@ export enum Inputs {
   EQUALS = 'equals',
   SQUARE_ROOT = 'sqrt',
   SQUARE = 'square',
-  LOG = 'log'
+  LOG = 'log',
+  SIN = 'sin',
+  PI = 'π',
+  DEGREES = '∘'
 }
 
-export const ALLOWED_INPUT: RegExp = /^[0-9\+\-\/\*]*$/;
-
+export const ALLOWED_INPUT: RegExp = /^[0-9\+\-\/\*\(\)npm ]*$/;
 const reduce = (state: State, value: string): State => {
 
   if (!value || value.length === 0) {
@@ -80,7 +82,10 @@ const reduce = (state: State, value: string): State => {
       const expr = removeLastChar(state.expr);
       return { expr };
     }
+    case Inputs.PI: return { expr: mathjs.pi.toString() };
+    // case Inputs.DEGREES: return { expr: mathjs.() };
     case Inputs.SQUARE_ROOT:
+    case Inputs.SIN:
     case Inputs.LOG:
     case Inputs.SQUARE: return unary(state, value);
     case Inputs.EQUALS: return equals(state);
@@ -88,12 +93,13 @@ const reduce = (state: State, value: string): State => {
       if (ALLOWED_INPUT.test(value)) {
         return { expr: `${state.expr}${value}` };
       } else {
-        return state;
+        return {
+          ...state,
+          error: Error(`unknown input: ${value}`)
+        };
       }
     }
   }
 };
 
-
 export default reduce;
-
