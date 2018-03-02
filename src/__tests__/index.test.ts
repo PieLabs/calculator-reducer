@@ -5,23 +5,23 @@ describe('reduce', () => {
 
   const str = (s) => JSON.stringify(s);
 
-  const _assert = only => (s, a: string, expected) => {
+  const a = only => (s, a: string, expected) => {
 
     const fn = only ? it.only : it;
 
-    s = typeof s === 'string' ? { value: s } : s;
-    expected = typeof expected === 'string' ? { value: expected } : expected;
+    s = typeof s === 'string' ? { expr: s } : s;
+    expected = typeof expected === 'string' ? { expr: expected } : expected;
     fn(`${str(s)} + ${str(a)} = ${str(expected)}`, () => {
       const result = reduce(s, a);
       expect(result).toEqual(expected);
     });
   };
 
-  const assert = _assert(false);
-  const assertOnly = _assert(true);
+  const assert = a(false);
+  const assertOnly = a(true);
 
   describe('digit', () => {
-    assert({ value: '1+' }, '1', { value: '1+1' });
+    assert('1+', '1', { expr: '1+1' });
   });
 
   describe('equals', () => {
@@ -29,7 +29,7 @@ describe('reduce', () => {
   });
 
   describe('operator', () => {
-    assert({ value: '1' }, '+', { value: '1+' });
+    assert('1', '+', { expr: '1+' });
   });
 
   describe('plus-minus', () => {
@@ -37,51 +37,29 @@ describe('reduce', () => {
   });
 
   describe('unary', () => {
-    assert('4', 'sqrt' }, '2');
-  assert('4', 'square' }, '16');
-assert('4', 'log' }, mathjs.log('4').toString());
-assert('4', 'foo' }, { value: '4', error: new Error('Unknown function: foo') });
-assert('(4 + 4) - 2 - 2', { type: 'unary', unary: 'sqrt' }, '2');
+    assert('4', 'sqrt', '2');
+    assert('4', 'square', '16');
+    assert('4', 'log', mathjs.log('4').toString());
+    assert('(4 + 4) - 2 - 2', 'sqrt', '2');
   });
 
-describe('clear', () => {
-  assert(
-    { value: '1' },
-    { type: 'clear' },
-    { value: '' });
-});
+  describe('badInput', () => {
+    assert('4', 'foo', { expr: '4' });
+  });
 
-describe('delete', () => {
-  assert(
-    { value: '' },
-    { type: 'delete' },
-    { value: '' });
+  describe('clear', () => {
+    assert('1', 'clear', { expr: '' });
+  });
 
-  assert(
-    { value: '11' },
-    { type: 'delete' },
-    { value: '1' });
+  describe('delete', () => {
+    assert('', 'delete', { expr: '' });
+    assert('11', 'delete', { expr: '1' });
+    assert('11+', 'delete', { expr: '11' });
+  });
 
-  assert(
-    { value: '11+' },
-    { type: 'delete' },
-    { value: '11' });
-});
-
-describe('decimal', () => {
-  assert(
-    { value: '1' },
-    { type: 'input', value: '.' },
-    { value: '1.' });
-
-  assert(
-    { value: '0' },
-    { type: 'input', value: '.' },
-    { value: '0.' });
-
-  assert(
-    { value: '', },
-    { type: 'input', value: '.' },
-    { value: '0.' });
-});
+  describe('decimal', () => {
+    assert('1', '.', { expr: '1.' });
+    assert('0', '.', { expr: '0.' });
+    assert('', '.', { expr: '0.' });
+  });
 });

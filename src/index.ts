@@ -2,7 +2,7 @@ import * as mathjs from 'mathjs';
 import debug from 'debug';
 
 export type State = {
-  value: string;
+  expr: string;
   error?: Error;
 };
 
@@ -21,17 +21,17 @@ const addDecimal = (s: string): string => {
   return t.indexOf('.') === -1 ? `${t}.` : t;
 };
 
-const equals = (s) => {
+const equals = (s: State): State => {
   try {
-    const value = mathjs.eval(s.value).toString();
-    return { value };
+    const expr = mathjs.eval(s.expr).toString();
+    return { expr };
   } catch (e) {
     log('[equals] error: ', e.message);
-    return { value: s, error: e };
+    return { expr: s.expr, error: e as Error };
   }
 };
 
-const unary = (state, unary) => {
+const unary = (state: State, unary: string): State => {
 
   state = equals(state);
 
@@ -39,8 +39,8 @@ const unary = (state, unary) => {
     return state;
   } else {
     if (mathjs[unary] && typeof mathjs[unary] === 'function') {
-      const value = mathjs[unary](parseFloat(state.value)).toString();
-      return { value };
+      const expr = mathjs[unary](parseFloat(state.expr)).toString();
+      return { expr };
     } else {
       return { ...state, error: new Error(`Unknown function: ${unary}`) };
     }
@@ -55,7 +55,10 @@ export enum Inputs {
   EQUALS = 'equals',
   SQUARE_ROOT = 'sqrt',
   SQUARE = 'square',
+  LOG = 'log'
 }
+
+export const ALLOWED_INPUT: RegExp = /^[0-9\+\-\/\*]*$/;
 
 const reduce = (state: State, value: string): State => {
 
@@ -64,24 +67,31 @@ const reduce = (state: State, value: string): State => {
   }
 
   switch (value) {
-    case Inputs.CLEAR: return { value: '' };
+    case Inputs.CLEAR: return { expr: '' };
     case Inputs.PLUS_MINUS: {
-      const value = state.value.indexOf('-') === 0 ? `${state.value.substring(1)}` : `-${state.value}`;
-      return { value };
+      const expr = state.expr.indexOf('-') === 0 ? `${state.expr.substring(1)}` : `-${state.expr}`;
+      return { expr };
     }
     case Inputs.DECIMAL: {
-      const value = addDecimal(state.value);
-      return { ...state, value };
+      const expr = addDecimal(state.expr);
+      return { expr };
     }
     case Inputs.DELETE: {
-      const { value } = state;
-      return { value: removeLastChar(value) };
+      const expr = removeLastChar(state.expr);
+      return { expr };
     }
     case Inputs.SQUARE_ROOT:
+    case Inputs.LOG:
     case Inputs.SQUARE: return unary(state, value);
     case Inputs.EQUALS: return equals(state);
-    default: return { value: `${state.value}${value}` };
-  };
+    default: {
+      if (ALLOWED_INPUT.test(value)) {
+        return { expr: `${state.expr}${value}` };
+      } else {
+        return state;
+      }
+    }
+  }
 };
 
 
